@@ -16,9 +16,6 @@ last_briefing_date = None
 last_recap_date = None
 
 def send_discord(title, description, color=3066993, footer_text="Nate's Trading Assistant"):
-    """
-    Discord သို့ Rich Embed Card ဖြင့် အစီရင်ခံစာ ပို့ပေးသည်
-    """
     payload = {
         "embeds": [{
             "title": title,
@@ -39,8 +36,6 @@ def get_market_data():
             return None
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
-        
-        # Data ကို JST Timezone သို့ ပြောင်းလဲခြင်း
         df.index = df.index.tz_convert(JST)
         return df.dropna()
     except Exception as e:
@@ -75,7 +70,6 @@ def send_daily_briefing():
     now_jst = datetime.datetime.now(JST)
     today_date = now_jst.date()
 
-    # Asian Session Range (09:00 - 15:00 JST)
     asian_df = df[(df.index.date == today_date) & (df.index.hour >= 9) & (df.index.hour < 15)]
     if asian_df.empty:
         return
@@ -86,7 +80,6 @@ def send_daily_briefing():
 
     t_1h, t_4h = get_htf_trend()
 
-    # Strategic Focus ဆုံးဖြတ်ခြင်း
     if "BULLISH" in t_1h and "BULLISH" in t_4h:
         focus = "Trend က Bullish ညီနေ၍ Asian Low (SSL) ကို သုတ်ပြီး ပြန်လှည့်လာမည့် Buy Setup ကိုသာ စိတ်ရှည်ရှည် ဦးစားပေး စောင့်ကြည့်ပေးပါ။"
     elif "BEARISH" in t_1h and "BEARISH" in t_4h:
@@ -109,14 +102,12 @@ def send_daily_briefing():
         f"⚠️ Execution Reminder:\n"
         f"အမေရိကန် သတင်းရှိပါက ဂရုစိုက်ပါ။ ဒီနေ့အတွက် စည်းကမ်းတကျ အေးအေးဆေးဆေး အနိုင်ယူလိုက်ကြရအောင်ဗျာ!"
     )
-  send_discord("🌅 NDX100 | DAILY SESSION BRIEFING", desc, color=3447003, footer_text="London Session Prep • 15:05 JST")
+    send_discord("🌅 NDX100 | DAILY SESSION BRIEFING", desc, color=3447003, footer_text="London Session Prep • 15:05 JST")
 
 def send_daily_recap():
     df = get_market_data()
     if df is None:
-        return
-
-    now_jst = datetime.datetime.now(JST)
+        returnnow_jst = datetime.datetime.now(JST)
     today_date = now_jst.date()
 
     asian_df = df[(df.index.date == today_date) & (df.index.hour >= 9) & (df.index.hour < 15)]
@@ -135,7 +126,6 @@ def send_daily_recap():
     swept_low = day_low < asian_low
     swept_high = day_high > asian_high
 
-    # 1. Sweep Analysis
     if swept_low and not swept_high:
         sweep_text = f"✅ SSL Swept (Asian Low အောက် {day_low:.2f} အထိ Wick ထိုးဆင်းခဲ့သည်)"
     elif swept_high and not swept_low:
@@ -145,37 +135,36 @@ def send_daily_recap():
     else:
         sweep_text = "❌ No Sweep (Asian Range အတွင်းသာ ပိတ်မိနေခဲ့သည်)"
 
-    # 2. MSS & Setup Evaluation
     if swept_low and day_close > asian_low:
         mss_text = "✅ 15m Bullish Shift Confirmed"
         target_text = "🎯 TP1 (1:2) အောင်မြင်စွာ ရောက်ရှိခဲ့သည်"
         direction_text = "🟢 Bullish Expansion Day"
         note_text = "Setup က Strategy အတိုင်း အတိအကျ ထွက်သွားခဲ့သည်။"
-        color = 3066993  # Green
+        color = 3066993
     elif swept_high and day_close < asian_high:
         mss_text = "✅ 15m Bearish Shift Confirmed"
         target_text = "🎯 TP1 (1:2) အောင်မြင်စွာ ရောက်ရှိခဲ့သည်"
         direction_text = "🔴 Bearish Expansion Day"
         note_text = "Setup က Strategy အတိုင်း အတိအကျ ထွက်သွားခဲ့သည်။"
-        color = 15158332  # Red
+        color = 15158332
     elif swept_high and day_close >= asian_high:
         mss_text = "❌ No Reversal MSS (Breakout Continuation)"
         target_text = "➖ Reversal Setup မထွက်ခဲ့ပါ"
         direction_text = "🔵 Strong Bullish Trend Day"
         note_text = "Reversal မပြဘဲ တစ်ရိုးတည်း အရှိန်ပြင်းပြင်း ထိုးတက်သွားခဲ့သည်။"
-        color = 3447003  # Blue
+        color = 3447003
     elif not swept_low and not swept_high:
         mss_text = "➖ No Setup Triggered"
         target_text = "➖ 0 Trade Day"
         direction_text = "⚪ Choppy / Consolidation Day"
         note_text = "Liquidity မသုတ်ဘဲ Range အတွင်း ငြိမ်နေ၍ အနားယူရမည့်နေ့ ဖြစ်ခဲ့သည်။"
-        color = 9807270  # Grey
+        color = 9807270
     else:
         mss_text = "⚠️ Volatile Market Shift"
         target_text = "➖ Complex Session"
         direction_text = "🟡 High Volatility Session"
         note_text = "ဈေးကွက် အတက်အကျ ပြင်းထန်ခဲ့သော နေ့ဖြစ်ခဲ့သည်။"
-        color = 15844367  # Gold
+        color = 15844367
 
     desc = (
         f"Good night ပါ သားရီး! 🌙\n"
@@ -191,9 +180,9 @@ def send_daily_recap():
         f"💡 Note: {note_text}\n\n"
         f"ဒီနေ့အတွက် Trading စည်းကမ်းတွေကို ထိန်းသိမ်းနိုင်ခဲ့တာ ဂုဏ်ယူပါတယ်ဗျာ။ စိတ်လက်အေးချမ်းစွာ ကောင်းကောင်း အနားယူလိုက်ပါဦး! မနက်ဖြန်ကျမှ ထပ်တွေ့ကြမယ်!"
     )
-
     send_discord("🌙 NDX100 | DAILY RECAP & JOURNAL", desc, color=color, footer_text="Daily Close Journal • 00:00 JST")
-  # ----------------- STARTUP DIRECT EXECUTION -----------------
+
+# ----------------- STARTUP DIRECT EXECUTION -----------------
 send_discord(
     "🤖 Nate's Trading Assistant Online!",
     "မင်္ဂလာပါ သားရီး!\n"
@@ -203,9 +192,7 @@ send_discord(
     "• Price Calibration: MatchTrader Offset (-270 pts) တပ်ဆင်ပြီး။\n\n"
     "၂၄ နာရီလုံး ဈေးကွက်ကို သေချာ စောင့်ကြည့်ပြီး အချိန်တန်ရင် အစီရင်ခံပေးပါ့မယ်!",
     color=3066993
-)
-
-# ----------------- SCHEDULER LOOP -----------------
+)# ----------------- SCHEDULER LOOP -----------------
 while True:
     try:
         now_jst = datetime.datetime.now(JST)
@@ -213,12 +200,10 @@ while True:
         hour = now_jst.hour
         minute = now_jst.minute
 
-        # ၁။ နေ့လယ်ပိုင်း Briefing (JST 15:05 - Asian ပြီးချိန်)
         if hour == 15 and minute >= 5 and last_briefing_date != today:
             send_daily_briefing()
             last_briefing_date = today
 
-        # ၂။ ညသန်းခေါင်ယံ Recap & Journal (JST 00:00 / ည ၁၂ နာရီ)
         if hour == 0 and minute >= 0 and last_recap_date != today:
             send_daily_recap()
             last_recap_date = today
